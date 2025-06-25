@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Barcode Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Theme switcher styles */
+        .theme-switcher {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .developer-badge {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            font-size: 12px;
+            z-index: 1000;
+        }
+
+        /* Barcode preview styles */
+        .barcode-preview {
+            padding: 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark-mode .barcode-preview {
+            background-color: #2d3748;
+        }
+        
+        /* Dark mode styles */
+        .dark-mode {
+            background-color: #1a202c;
+            color: #e2e8f0;
+        }
+        
+        .dark-mode .container, 
+        .dark-mode .max-w-4xl {
+            background-color: #2d3748;
+        }
+        
+        .dark-mode .bg-white {
+            background-color: #2d3748 !important;
+        }
+        
+        .dark-mode .text-gray-700,
+        .dark-mode .text-gray-600 {
+            color: #e2e8f0 !important;
+        }
+        
+        /* Change gray text to black in dark mode */
+        .dark-mode .text-gray-500,
+        .dark-mode .label-black {
+            color: #000000 !important;
+        }
+        
+        .dark-mode input,
+        .dark-mode select {
+            background-color: #4a5568;
+            color: #e2e8f0 !important;
+            border-color: #000000;
+        }
+        
+        .dark-mode .developer-badge {
+            background-color: rgba(45, 55, 72, 0.9);
+            color: #e2e8f0;
+        }
+
+        /* Toggle switch with animation */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 3rem;
+            height: 1.5rem;
+            margin-right: 0.5rem;
+        }
+        
+        .toggle-checkbox {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #d1d5db;
+            border-radius: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .toggle-dot {
+            position: absolute;
+            top: 0.25rem;
+            left: 0.25rem;
+            width: 1rem;
+            height: 1rem;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+        
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #818cf8;
+        }
+        
+        .toggle-checkbox:checked ~ .toggle-dot {
+            transform: translateX(1.5rem);
+        }
+        
+        /* Custom slider styles to match input fields */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 0.5rem;
+            border-radius: 0.5rem;
+            background: #e2e8f0;
+            outline: none;
+            border: 1px solid #d1d5db;
+            padding: 0;
+            margin: 0.5rem 0;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 50%;
+            background: #4f46e5;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            transition: all 0.2s ease;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+        
+        /* Dark mode slider styles */
+        .dark-mode input[type="range"] {
+            background: #4a5568;
+            border-color: #000000;
+        }
+        
+        .dark-mode input[type="range"]::-webkit-slider-thumb {
+            background: #818cf8;
+            border-color: #4a5568;
+        }
+        
+        /* Range input labels */
+        .range-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Theme Switcher -->
+    <div class="theme-switcher text-indigo-600" id="themeSwitcher">
+        <i class="fas fa-moon" id="themeIcon"></i>
+    </div>
+
+    <!-- Developer Badge -->
+    <div class="developer-badge text-indigo-600 font-medium">
+        Pengembang Aplikasi: KayDev
+    </div>
+
+    <div class="container mx-auto px-4 py-12">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-indigo-700 mb-2">Advanced Barcode Generator</h1>
+            <p class="text-gray-600">Create professional barcodes in seconds</p>
+        </div>
+
+        <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
+            <!-- Main Content -->
+            <div class="md:flex">
+                <!-- Settings Panel -->
+                <div class="md:w-1/2 p-8 bg-indigo-50">
+                    <div class="mb-6">
+                        <label for="barcodeText" class="block text-sm font-medium text-gray-700 mb-2 label-black">Barcode Content</label>
+                        <input type="text" id="barcodeText" 
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                            placeholder="Enter text or numbers" value="BARCODE-123">
+                        <p class="mt-1 text-xs text-gray-500">Enter the data you want to encode</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="barcodeType" class="block text-sm font-medium text-gray-700 mb-2 label-black">Barcode Type</label>
+                        <select id="barcodeType" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="CODE128">CODE128</option>
+                            <option value="CODE39">CODE39</option>
+                            <option value="EAN13">EAN-13</option>
+                            <option value="EAN8">EAN-8</option>
+                            <option value="UPC">UPC</option>
+                            <option value="ITF14">ITF-14</option>
+                            <option value="MSI">MSI</option>
+                            <option value="pharmacode">Pharmacode</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label for="barcodeWidth" class="block text-sm font-medium text-gray-700 mb-2 label-black">Line Width</label>
+                            <input type="range" id="barcodeWidth" min="1" max="5" value="2" step="0.5" 
+                                class="w-full">
+                            <div class="range-labels text-xs text-gray-500">
+                                <span>Thin</span>
+                                <span>Thick</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="barcodeHeight" class="block text-sm font-medium text-gray-700 mb-2 label-black">Height</label>
+                            <input type="range" id="barcodeHeight" min="30" max="150" value="100" 
+                                class="w-full">
+                            <div class="range-labels text-xs text-gray-500">
+                                <span>Short</span>
+                                <span>Tall</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label for="textPosition" class="block text-sm font-medium text-gray-700 mb-2 label-black">Text Position</label>
+                            <select id="textPosition" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="bottom">Bottom</option>
+                                <option value="top">Top</option>
+                                <option value="none">Hidden</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="textSize" class="block text-sm font-medium text-gray-700 mb-2 label-black">Text Size</label>
+                            <input type="range" id="textSize" min="10" max="30" value="20" 
+                                class="w-full">
+                            <div class="range-labels text-xs text-gray-500">
+                                <span>Small</span>
+                                <span>Large</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Improved Toggle with Animation -->
+                    <div class="mb-6">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="showBorder" class="toggle-checkbox sr-only">
+                                <label for="showBorder" class="toggle-label"></label>
+                                <span class="toggle-dot"></span>
+                            </div>
+                            <span class="block text-sm font-medium text-gray-700 mb-2 label-black">Add Border</span>
+                        </label>
+                    </div>
+
+                    <button id="generateBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200">
+                        Generate Barcode
+                    </button>
+
+                    <button id="downloadBtn" class="w-full mt-4 bg-white hover:bg-gray-100 text-indigo-600 font-bold py-3 px-4 rounded-lg border border-indigo-600 transition duration-200">
+                        Download Barcode
+                    </button>
+                </div>
+
+                <!-- Preview Panel -->
+                <div class="md:w-1/2 p-8 flex flex-col items-center justify-center">
+                    <div class="mb-6 w-full">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Barcode Preview</h3>
+                        <div class="barcode-preview flex justify-center items-center" id="barcodeContainer">
+                            <svg id="barcode"></svg>
+                        </div>
+                    </div>
+                    <div id="barcodeInfo" class="text-sm text-gray-500 mt-4">
+                        <p class="font-medium">Barcode Details:</p>
+                        <p id="typeInfo">Type: CODE128</p>
+                        <p id="dataInfo">Data: BARCODE-123</p>
+                        <p id="dimensionsInfo">Dimensions: 200px × 100px</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-8 text-gray-500 text-sm">
+            <p>Barcode Generator v1.0 - Drag to resize the barcode for different uses</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme switcher
+            const themeSwitcher = document.getElementById('themeSwitcher');
+            const themeIcon = document.getElementById('themeIcon');
+            const body = document.body;
+            
+            themeSwitcher.addEventListener('click', function() {
+                if (body.classList.contains('dark-mode')) {
+                    body.classList.remove('dark-mode');
+                    themeIcon.classList.replace('fa-sun', 'fa-moon');
+                    localStorage.setItem('theme', 'light');
+                } else {
+                    body.classList.add('dark-mode');
+                    themeIcon.classList.replace('fa-moon', 'fa-sun');
+                    localStorage.setItem('theme', 'dark');
+                }
+            });
+            
+            // Check for saved theme or prefer color scheme
+            if (localStorage.getItem('theme') === 'dark' || 
+                (window.matchMedia('(prefers-color-scheme: dark)').matches && !localStorage.getItem('theme'))) {
+                body.classList.add('dark-mode');
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+            }
+
+            // Barcode generation
+            const barcodeText = document.getElementById('barcodeText');
+            const barcodeType = document.getElementById('barcodeType');
+            const barcodeWidth = document.getElementById('barcodeWidth');
+            const barcodeHeight = document.getElementById('barcodeHeight');
+            const textPosition = document.getElementById('textPosition');
+            const textSize = document.getElementById('textSize');
+            const showBorder = document.getElementById('showBorder');
+            const generateBtn = document.getElementById('generateBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const barcodeContainer = document.getElementById('barcodeContainer');
+            const barcodeSVG = document.getElementById('barcode');
+            
+            // Info elements
+            const typeInfo = document.getElementById('typeInfo');
+            const dataInfo = document.getElementById('dataInfo');
+            const dimensionsInfo = document.getElementById('dimensionsInfo');
+
+            function generateBarcode() {
+                const options = {
+                    format: barcodeType.value,
+                    width: parseFloat(barcodeWidth.value),
+                    height: parseInt(barcodeHeight.value),
+                    displayValue: textPosition.value !== 'none',
+                    textPosition: textPosition.value === 'none' ? 'bottom' : textPosition.value,
+                    fontSize: parseInt(textSize.value),
+                    margin: 10,
+                    lineColor: '#000000',
+                    background: 'transparent'
+                };
+
+                // Update border with animation
+                if (showBorder.checked) {
+                    barcodeContainer.classList.add('border-2', 'border-indigo-300');
+                    barcodeContainer.style.transition = 'border-color 0.3s ease';
+                } else {
+                    barcodeContainer.classList.remove('border-2', 'border-indigo-300');
+                }
+
+                // Generate barcode
+                try {
+                    JsBarcode("#barcode", barcodeText.value, options);
+                    
+                    // Update info
+                    typeInfo.textContent = `Type: ${barcodeType.value}`;
+                    dataInfo.textContent = `Data: ${barcodeText.value}`;
+                    dimensionsInfo.textContent = `Dimensions: ${barcodeSVG.clientWidth}px × ${barcodeSVG.clientHeight}px`;
+                } catch (e) {
+                    alert('Error generating barcode: ' + e.message);
+                }
+            }
+
+            // Initial generation
+            generateBarcode();
+
+            // Event listeners
+            generateBtn.addEventListener('click', generateBarcode);
+            
+            // Auto-update on changes
+            [barcodeText, barcodeType, barcodeWidth, barcodeHeight, textPosition, textSize, showBorder].forEach(element => {
+                element.addEventListener('change', generateBarcode);
+                element.addEventListener('input', generateBarcode);
+            });
+
+            // Download functionality
+            downloadBtn.addEventListener('click', function() {
+                const canvas = document.createElement('canvas');
+                const serializer = new XMLSerializer();
+                const svgStr = serializer.serializeToString(barcodeSVG);
+                
+                canvas.width = barcodeSVG.width.baseVal.value;
+                canvas.height = barcodeSVG.height.baseVal.value;
+                
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = function() {
+                    ctx.drawImage(img, 0, 0);
+                    const dataURL = canvas.toDataURL('image/png');
+                    
+                    const link = document.createElement('a');
+                    link.download = `barcode-${barcodeType.value}-${Date.now()}.png`;
+                    link.href = dataURL;
+                    link.click();
+                };
+                
+                img.src = 'data:image/svg+xml;base64,' + b64EncodeUnicode(svgStr);
+            });
+
+            function b64EncodeUnicode(str) {
+                return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, 
+                    function(match, p1) {
+                        return String.fromCharCode('0x' + p1);
+                    }));
+            }
+        });
+    </script>
+</body>
+</html>
